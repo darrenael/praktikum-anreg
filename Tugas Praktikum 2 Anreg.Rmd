@@ -1,0 +1,123 @@
+---
+title: "Tugas Praktikum 2 Anreg"
+output: html_document
+date: "2026-02-10"
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+```
+```{r}
+data <- read_excel("C:/Users/user/Downloads/WHR25_Data_Figure_2.1v3.xlsx")
+str(data)
+```
+```{r}
+data_2024 <- data %>% 
+  filter(Year == 2024)
+
+dim(data_2024)
+```
+```{r}
+data_model <- data_2024 %>%
+  select(
+    Country = `Country name`,
+    Y  = `Life evaluation (3-year average)`,
+    X1 = `Explained by: Log GDP per capita`,
+    X2 = `Explained by: Social support`,
+    X3 = `Explained by: Healthy life expectancy`,
+    X4 = `Explained by: Freedom to make life choices`,
+    X5 = `Explained by: Perceptions of corruption`
+  )
+
+data_model <- na.omit(data_model)
+```
+```{r}
+head(data_model)
+str(data_model)
+```
+```{r}
+htmltools::tags$h1("Membuat Model Regresi Manual")
+```
+```{r}
+plot(data_model$X1, data_model$Y,
+     main = "Hubungan Log PDB per Kapita dengan Penilaian Hidup",
+     xlab = "Log PDB per Kapita",
+     ylab = "Penilaian Hidup (rata-rata 3 tahun)")
+```
+```{r}
+summary(data_model$Y)
+```
+```{r}
+boxplot(data_model$Y)
+```
+```{r}
+summary(data_model$X1)
+```
+```{r}
+boxplot(data_model$X1)
+```
+```{r}
+x <- data_model$X1
+y <- data_model$Y
+n <- length(x)
+
+b1 <- (sum((x - mean(x)) * (y - mean(y))) / sum((x - mean(x))^2))
+b0 <- mean(y) - b1 * mean(x)
+
+cat("Koefisien b0:", b0, "\n")
+cat("Koefisien b1:", b1, "\n")
+```
+```{r}
+htmltools::tags$h1("Menghitung Galat")
+galat <- y-(b0+b1*x)
+ragam_galat <- sum(galat^2)/(n-2)
+
+se_b0 <- sqrt(ragam_galat*(1/n+mean(x)^2/sum((x-mean(x))^2)))
+se_b1 <- sqrt(ragam_galat/sum((x-mean(x))^2))
+
+cat("Standar error b0:", se_b0, "\n")
+cat("Standar error b1:", se_b1, "\n")
+```
+```{r}
+htmltools::tags$h1("Signifikansi Parameter")
+t_b0 <- b0/se_b0
+t_b1 <- b1/se_b1
+p_b0 <- 2*pt(-abs(t_b0 ),df<-n-2)
+p_b1 <- 2*pt(-abs(t_b1 ),df<-n-2)
+
+cat("Nilai t pada b0 adalah", t_b0, "dengan nilai p sebesar", p_b0, "\n")
+cat("Nilai t pada b1 adalah", t_b1, "dengan nilai p sebesar", p_b1, "\n") 
+
+```
+```{r}
+htmltools::tags$h1("Koef Determinasi")
+r <- (sum(x*y)-sum(x)*sum(y)/n)/
+sqrt((sum(x^2)-(sum(x)^2/n))*(sum(y^2)-(sum(y)^2/n)))
+Koef_det <- r^2
+Koef_det
+
+Adj_R2 <- 1-((1-Koef_det)*(n-1)/(n-1-1))
+Adj_R2
+```
+```{r}
+htmltools::tags$h1("Model lm()")
+model <- lm(Y~X1, data = data_model)
+summary(model)
+```
+## Kesimpulan
+
+Model yang terbentuk adalah sebagai berikut:
+
+$$
+\hat{Y} = 2.59933 + 2.25609 X_1
+$$
+
+dengan Y adalah total pengeluaran rumah tangga dan X1 adalah pengeluaran untuk makanan.
+
+Didapatkan nilai $\hat{\beta}_0 = 2.59933$ artinya nilai dugaan rataan Y ketika X1 = 0 adalah 2.5993.
+
+Nilai $\hat{\beta}_1 = 2.25609$ artinya dugaan perubahan rataan Y jika X1 bertambah 1 unit adalah sebesar 2.25609.
+
+Koefisien determinasi (R-squared) = 0.5834 atau 58.34%.
+
